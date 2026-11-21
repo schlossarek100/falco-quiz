@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Falco Quiz</title>
+<meta name="theme-color" content="#0f0d12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Falco Quiz">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root {
+    --bg: #0f0d12; --card: #1b1820; --card2: #25212c; --text: #f3eefa; --muted: #a59eb3;
+    --accent: #e0b84a; --accent2: #c0392b; --ok: #3fae6a; --border: #353042;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: radial-gradient(circle at top, #2a1f33 0%, var(--bg) 60%); color: var(--text);
+         font-family: "Segoe UI", system-ui, sans-serif; min-height: 100vh; }
+  header { text-align: center; padding: 28px 16px 8px; }
+  h1 { margin: 0; font-size: clamp(2.2rem, 6vw, 3.6rem); letter-spacing: .08em; font-weight: 800;
+       background: linear-gradient(90deg, var(--accent), #fff3c4, var(--accent)); -webkit-background-clip: text;
+       background-clip: text; color: transparent; }
+  header p { color: var(--muted); margin: 6px 0 0; }
+  .toolbar { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; padding: 14px 16px; }
+  button { font: inherit; border: 1px solid var(--border); background: var(--card2); color: var(--text);
+           padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #1a1400; border-color: var(--accent); font-weight: 700; }
+  button.stop { background: var(--accent2); border-color: var(--accent2); }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  .status { text-align: center; color: var(--muted); min-height: 1.4em; padding: 0 16px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 12px 16px calc(40px + env(safe-area-inset-bottom)); display: grid;
+         grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 14px; }
+  header { padding-top: calc(28px + env(safe-area-inset-top)); }
+  body { -webkit-tap-highlight-color: transparent; }
+  @media (pointer: coarse) {
+    input[type=range] { height: 32px; }
+    button { padding: 12px 14px; }
+  }
+  a.spotify { display: block; text-align: center; margin-top: 10px; padding: 10px; border-radius: 8px;
+              background: #1db954; color: #04130a; font-weight: 700; text-decoration: none; }
+  .toolbar a.spotify { display: inline-block; margin: 0; padding: 8px 14px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; }
+  .card.playing { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(224,184,74,.25); }
+  .head { display: flex; align-items: center; gap: 12px; }
+  .num { width: 42px; height: 42px; border-radius: 50%; background: var(--card2); display: grid; place-items: center;
+         font-weight: 800; font-size: 1.2rem; color: var(--accent); flex: none; }
+  .title { flex: 1; font-weight: 600; }
+  .title.hidden { color: var(--muted); letter-spacing: .3em; }
+  .row { margin-top: 12px; }
+  .row label { display: flex; justify-content: space-between; font-size: .9rem; color: var(--muted); }
+  .row label b { color: var(--text); }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .btns { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .btns button { flex: 1; }
+  .progress { height: 4px; background: var(--card2); border-radius: 2px; margin-top: 10px; overflow: hidden; }
+  .progress div { height: 100%; width: 0; background: var(--accent); transition: width .1s linear; }
+  .edit { display: none; margin-top: 12px; border-top: 1px dashed var(--border); padding-top: 10px; }
+  body.editing .edit { display: block; }
+  .edit input[type=text] { width: 100%; font: inherit; background: var(--bg); color: var(--text);
+         border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; margin-top: 4px; }
+  .edit small { color: var(--muted); display: block; margin-top: 6px; }
+  .edit a { color: var(--accent); }
+  .nolink { color: var(--accent2); font-size: .85rem; margin-top: 8px; }
+  #playerWrap { position: fixed; left: -10000px; top: 0; width: 300px; height: 152px; }
+  body.showplayer #playerWrap { left: auto; right: 16px; bottom: 16px; top: auto; z-index: 10; }
+</style>
+</head>
+<body>
+<header>
+  <h1>FALCO QUIZ</h1>
+  <p>Erkennst du den Song? 10 Lieder vom Falken.</p>
+</header>
+
+<div class="toolbar">
+  <button id="btnEdit">✏️ Lieder bearbeiten</button>
+  <button id="btnReveal">👁️ Alle auflösen</button>
+  <button id="btnHide">🙈 Alle verbergen</button>
+  <button id="btnPlayer">🎧 Player zeigen</button>
+  <button id="btnStop" class="stop">⏹ Stopp</button>
+  <a class="spotify" target="_blank" rel="noopener" href="https://open.spotify.com/search/Falco/artists">Falco auf Spotify</a>
+</div>
+<div class="status" id="status">Spotify-Player wird geladen …</div>
+
+<main id="grid"></main>
+
+<div id="playerWrap"><div id="embed"></div></div>
+
+<script>
+// ---- Standard-Liederliste (nur Falco). Spotify-Links im Bearbeiten-Modus eintragen. ----
+const T = id => "https://open.spotify.com/track/" + id;
+const DEFAULT_SONGS = [
+  ["Rock Me Amadeus",              T("67Dd0BI81gu6QT7otMd4Gm")],
+  ["Der Kommissar",                T("3TBRJsLCcwroEkA3tD4u2N")],
+  ["Jeanny",                       T("27T7BLapptTCdMsloBPF1r")],
+  ["Vienna Calling",               T("5wdPxVeUmUmUi6SI11ahcc")],
+  ["Out of the Dark",              T("6vgnumRgsZcc5fVFtpIRO1")],
+  ["Coming Home (Jeanny Part II)", T("0nmzzlEwM1q01aATMtEFKb")],
+  ["Junge Römer",                  T("0umRq6hVHFAbuFbBkh8iNP")],
+  ["Titanic",                      T("3mPns1CtwgjtKLljMJXAv0")],
+  ["Emotional",                    T("4wk0S1sMJ9ziDBhRoyDsQN")],
+  ["Egoist",                       T("42FkWSTjmB0M94Ppsq41hR")]
+];
+const STORE_KEY = "falcoQuiz.v1";
+
+function load() {
+  const defs = DEFAULT_SONGS.map(([t, l]) => ({ title: t, link: l, start: 0, dur: 5, max: 240, revealed: false }));
+  try {
+    const s = JSON.parse(localStorage.getItem(STORE_KEY));
+    if (Array.isArray(s) && s.length === 10)
+      return s.map((x, i) => x.link ? x : { ...x, title: x.title || defs[i].title, link: defs[i].link });
+  } catch (e) {}
+  return defs;
+}
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(songs)); } catch (e) {} }
+
+let songs = load();
+songs.forEach(s => s.revealed = false);
+
+// Spotify-Link oder URI -> spotify:track:ID
+function toUri(link) {
+  if (!link) return null;
+  link = link.trim();
+  let m = link.match(/^spotify:track:([A-Za-z0-9]{22})$/);
+  if (m) return link;
+  m = link.match(/open\.spotify\.com\/(?:intl-[a-z]+\/)?track\/([A-Za-z0-9]{22})/);
+  return m ? "spotify:track:" + m[1] : null;
+}
+const fmt = s => Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+
+// ---- UI ----
+const grid = document.getElementById("grid");
+const statusEl = document.getElementById("status");
+const setStatus = t => statusEl.textContent = t;
+
+function render() {
+  grid.innerHTML = "";
+  songs.forEach((s, i) => {
+    const uri = toUri(s.link);
+    const card = document.createElement("div");
+    card.className = "card";
+    card.id = "card" + i;
+    card.innerHTML = `
+      <div class="head">
+        <div class="num">${i + 1}</div>
+        <div class="title ${s.revealed ? "" : "hidden"}">${s.revealed ? esc(s.title) : "? ? ? ? ?"}</div>
+      </div>
+      ${uri ? "" : `<div class="nolink">Noch kein Spotify-Link – unter „Lieder bearbeiten“ eintragen.</div>`}
+      <div class="row">
+        <label>Startposition <b class="vStart">${fmt(s.start)}</b></label>
+        <input type="range" class="rStart" min="0" max="${s.max}" step="1" value="${s.start}">
+      </div>
+      <div class="row">
+        <label>Abspieldauer <b class="vDur">${s.dur} s</b></label>
+        <input type="range" class="rDur" min="1" max="10" step="1" value="${s.dur}">
+      </div>
+      <div class="progress"><div></div></div>
+      <div class="btns">
+        <button class="primary bPlay" ${uri ? "" : "disabled"}>▶ Abspielen</button>
+        <button class="bReveal">${s.revealed ? "Verbergen" : "Auflösen"}</button>
+      </div>
+      ${s.revealed && uri ? `<a class="spotify" target="_blank" rel="noopener" href="https://open.spotify.com/track/${uri.split(":")[2]}">🎵 Ganzes Lied in Spotify öffnen</a>` : ""}
+      <div class="edit">
+        <label>Titel<input type="text" class="eTitle" value="${esc(s.title)}"></label>
+        <label>Spotify-Link<input type="text" class="eLink" placeholder="https://open.spotify.com/track/..." value="${esc(s.link)}"></label>
+        <small><a target="_blank" rel="noopener" href="https://open.spotify.com/search/${encodeURIComponent("Falco " + s.title)}">Auf Spotify suchen</a>
+        → beim Song „Teilen → Songlink kopieren“ und hier einfügen.</small>
+      </div>`;
+    const rStart = card.querySelector(".rStart"), rDur = card.querySelector(".rDur");
+    rStart.oninput = () => { s.start = +rStart.value; card.querySelector(".vStart").textContent = fmt(s.start); save(); };
+    rDur.oninput = () => { s.dur = +rDur.value; card.querySelector(".vDur").textContent = s.dur + " s"; save(); };
+    card.querySelector(".bPlay").onclick = () => playSnippet(i);
+    card.querySelector(".bReveal").onclick = () => { s.revealed = !s.revealed; render(); };
+    card.querySelector(".eTitle").onchange = e => { s.title = e.target.value; save(); render(); };
+    card.querySelector(".eLink").onchange = e => {
+      const v = e.target.value.trim();
+      if (v && !toUri(v)) { alert("Das ist kein gültiger Spotify-Song-Link."); e.target.value = s.link; return; }
+      s.link = v; s.max = 240; s.start = Math.min(s.start, s.max); save(); render();
+    };
+    grid.appendChild(card);
+  });
+}
+function esc(t) { return String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
+
+document.getElementById("btnEdit").onclick = () => document.body.classList.toggle("editing");
+document.getElementById("btnReveal").onclick = () => { songs.forEach(s => s.revealed = true); render(); };
+document.getElementById("btnHide").onclick = () => { songs.forEach(s => s.revealed = false); render(); };
+document.getElementById("btnPlayer").onclick = e => {
+  const on = document.body.classList.toggle("showplayer");
+  e.target.textContent = on ? "🎧 Player verstecken" : "🎧 Player zeigen";
+};
+document.getElementById("btnStop").onclick = () => stopPlayback("Gestoppt.");
+
+// ---- Spotify Embed-Player ----
+let controller = null, currentUri = null;
+let active = null; // { idx, timer, started, ticker }
+
+window.onSpotifyIframeApiReady = (IFrameAPI) => {
+  IFrameAPI.createController(document.getElementById("embed"), { width: 300, height: 152 }, (c) => {
+    controller = c;
+    setStatus("Bereit. Wähle ein Lied und drücke ▶ Abspielen.");
+    c.addListener("playback_update", onUpdate);
+  });
+};
+
+function onUpdate(e) {
+  const d = e.data;
+  if (!active) return;
+  const s = songs[active.idx];
+  // Liedlänge für den Startregler übernehmen
+  if (d.duration > 0) {
+    const max = Math.max(0, Math.floor(d.duration / 1000) - 1);
+    if (max !== s.max) {
+      s.max = max; save();
+      const r = document.querySelector(`#card${active.idx} .rStart`);
+      if (r) r.max = max;
+    }
+  }
+  // Timer erst starten, wenn wirklich an der Startposition gespielt wird
+  if (!active.started && !d.isPaused && d.position >= s.start * 1000 - 1500) {
+    active.started = true;
+    const t0 = performance.now(), ms = s.dur * 1000;
+    const bar = document.querySelector(`#card${active.idx} .progress div`);
+    active.ticker = setInterval(() => { if (bar) bar.style.width = Math.min(100, (performance.now() - t0) / ms * 100) + "%"; }, 50);
+    active.timer = setTimeout(() => stopPlayback("Fertig – wer weiß es?"), ms);
+    setStatus(`Lied ${active.idx + 1} läuft …`);
+  }
+}
+
+function stopPlayback(msg) {
+  if (controller) controller.pause();
+  if (active) {
+    clearTimeout(active.timer); clearTimeout(active.fallback); clearInterval(active.ticker);
+    const card = document.getElementById("card" + active.idx);
+    if (card) { card.classList.remove("playing"); card.querySelector(".progress div").style.width = "0"; }
+  }
+  active = null;
+  if (msg) setStatus(msg);
+}
+
+function playSnippet(i) {
+  if (!controller) { setStatus("Spotify-Player ist noch nicht bereit."); return; }
+  const s = songs[i], uri = toUri(s.link);
+  if (!uri) return;
+  stopPlayback();
+  active = { idx: i, started: false };
+  document.getElementById("card" + i).classList.add("playing");
+  setStatus(`Lied ${i + 1} wird geladen …`);
+
+  const go = () => {
+    controller.play();
+    setTimeout(() => { if (active && active.idx === i) controller.seek(s.start); }, 400);
+  };
+  if (currentUri !== uri) {
+    currentUri = uri;
+    controller.loadUri(uri);
+    setTimeout(go, 900);
+  } else {
+    controller.seek(s.start);
+    controller.resume();
+    setTimeout(() => { if (active && active.idx === i) controller.seek(s.start); }, 300);
+  }
+  // Falls der Browser Autoplay blockiert
+  active.fallback = setTimeout(() => {
+    if (active && active.idx === i && !active.started)
+      setStatus("Kein Ton? Klicke „🎧 Player zeigen“, starte einmal im Player selbst und versuche es erneut.");
+  }, 5000);
+}
+
+render();
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+<script src="https://open.spotify.com/embed/iframe-api/v1" async></script>
+</body>
+</html>

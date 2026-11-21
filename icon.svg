@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#1b1820"/>
+  <circle cx="256" cy="256" r="190" fill="none" stroke="#e0b84a" stroke-width="18"/>
+  <text x="256" y="330" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="240" fill="#e0b84a">F</text>
+  <text x="256" y="415" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="800" font-size="52" letter-spacing="8" fill="#f3eefa">QUIZ</text>
+</svg>
