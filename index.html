@@ -19,27 +19,26 @@
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: radial-gradient(circle at top, #2a1f33 0%, var(--bg) 60%); color: var(--text);
-         font-family: "Segoe UI", system-ui, sans-serif; min-height: 100vh; }
-  header { text-align: center; padding: 28px 16px 8px; }
+         font-family: "Segoe UI", system-ui, sans-serif; min-height: 100vh; -webkit-tap-highlight-color: transparent; }
+  header { text-align: center; padding: calc(28px + env(safe-area-inset-top)) 16px 8px; }
   h1 { margin: 0; font-size: clamp(2.2rem, 6vw, 3.6rem); letter-spacing: .08em; font-weight: 800;
        background: linear-gradient(90deg, var(--accent), #fff3c4, var(--accent)); -webkit-background-clip: text;
        background-clip: text; color: transparent; }
   header p { color: var(--muted); margin: 6px 0 0; }
   .toolbar { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; padding: 14px 16px; }
-  button { font: inherit; border: 1px solid var(--border); background: var(--card2); color: var(--text);
-           padding: 8px 14px; border-radius: 8px; cursor: pointer; }
-  button:hover { border-color: var(--accent); }
+  button, .filebtn { font: inherit; border: 1px solid var(--border); background: var(--card2); color: var(--text);
+           padding: 8px 14px; border-radius: 8px; cursor: pointer; display: inline-block; text-align: center; }
+  button:hover, .filebtn:hover { border-color: var(--accent); }
   button.primary { background: var(--accent); color: #1a1400; border-color: var(--accent); font-weight: 700; }
   button.stop { background: var(--accent2); border-color: var(--accent2); }
   button:disabled { opacity: .4; cursor: not-allowed; }
+  .filebtn input { display: none; }
   .status { text-align: center; color: var(--muted); min-height: 1.4em; padding: 0 16px; }
   main { max-width: 1100px; margin: 0 auto; padding: 12px 16px calc(40px + env(safe-area-inset-bottom)); display: grid;
          grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 14px; }
-  header { padding-top: calc(28px + env(safe-area-inset-top)); }
-  body { -webkit-tap-highlight-color: transparent; }
   @media (pointer: coarse) {
     input[type=range] { height: 32px; }
-    button { padding: 12px 14px; }
+    button, .filebtn { padding: 12px 14px; }
   }
   a.spotify { display: block; text-align: center; margin-top: 10px; padding: 10px; border-radius: 8px;
               background: #1db954; color: #04130a; font-weight: 700; text-decoration: none; }
@@ -51,21 +50,30 @@
          font-weight: 800; font-size: 1.2rem; color: var(--accent); flex: none; }
   .title { flex: 1; font-weight: 600; }
   .title.hidden { color: var(--muted); letter-spacing: .3em; }
+  .src { font-size: .75rem; padding: 3px 8px; border-radius: 999px; background: var(--card2); color: var(--muted); flex: none; }
+  .src.file { background: rgba(63,174,106,.18); color: #7fdca2; }
+  .src.spot { background: rgba(29,185,84,.15); color: #6fe39a; }
   .row { margin-top: 12px; }
   .row label { display: flex; justify-content: space-between; font-size: .9rem; color: var(--muted); }
   .row label b { color: var(--text); }
   input[type=range] { width: 100%; accent-color: var(--accent); }
   .btns { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-  .btns button { flex: 1; }
+  .btns > * { flex: 1; }
   .progress { height: 4px; background: var(--card2); border-radius: 2px; margin-top: 10px; overflow: hidden; }
-  .progress div { height: 100%; width: 0; background: var(--accent); transition: width .1s linear; }
+  .progress div { height: 100%; width: 0; background: var(--accent); }
   .edit { display: none; margin-top: 12px; border-top: 1px dashed var(--border); padding-top: 10px; }
-  body.editing .edit { display: block; }
+  body.editing .edit, body.editing .editonly { display: block; }
+  .editonly { display: none; }
+  .edit label { display: block; margin-top: 8px; font-size: .9rem; color: var(--muted); }
   .edit input[type=text] { width: 100%; font: inherit; background: var(--bg); color: var(--text);
          border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; margin-top: 4px; }
   .edit small { color: var(--muted); display: block; margin-top: 6px; }
   .edit a { color: var(--accent); }
+  .fileinfo { font-size: .85rem; color: #7fdca2; margin-top: 8px; word-break: break-all; }
   .nolink { color: var(--accent2); font-size: .85rem; margin-top: 8px; }
+  .banner { max-width: 1100px; margin: 0 auto 4px; padding: 12px 16px; }
+  .banner > div { background: var(--card); border: 1px dashed var(--accent); border-radius: 12px; padding: 12px 14px; color: var(--muted); }
+  .banner .filebtn { margin-top: 8px; background: var(--accent); color: #1a1400; border-color: var(--accent); font-weight: 700; }
   #playerWrap { position: fixed; left: -10000px; top: 0; width: 300px; height: 152px; }
   body.showplayer #playerWrap { left: auto; right: 16px; bottom: 16px; top: auto; z-index: 10; }
 </style>
@@ -80,18 +88,27 @@
   <button id="btnEdit">✏️ Lieder bearbeiten</button>
   <button id="btnReveal">👁️ Alle auflösen</button>
   <button id="btnHide">🙈 Alle verbergen</button>
-  <button id="btnPlayer">🎧 Player zeigen</button>
+  <button id="btnPlayer">🎧 Spotify-Player zeigen</button>
   <button id="btnStop" class="stop">⏹ Stopp</button>
   <a class="spotify" target="_blank" rel="noopener" href="https://open.spotify.com/search/Falco/artists">Falco auf Spotify</a>
 </div>
-<div class="status" id="status">Spotify-Player wird geladen …</div>
+
+<div class="banner editonly"><div>
+  <b style="color:var(--text)">Eigene Musikdateien laden</b><br>
+  Wähle mehrere MP3/M4A-Dateien auf einmal aus. Sie werden anhand des Dateinamens den Liedern zugeordnet
+  (z. B. „Falco - Jeanny.mp3“ → Jeanny). Die Dateien bleiben nur auf diesem Gerät gespeichert.<br>
+  <label class="filebtn">📁 Dateien auswählen<input type="file" id="multiFile" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac" multiple></label>
+</div></div>
+
+<div class="status" id="status">Bereit.</div>
 
 <main id="grid"></main>
 
 <div id="playerWrap"><div id="embed"></div></div>
+<audio id="audio" preload="auto" playsinline></audio>
 
 <script>
-// ---- Standard-Liederliste (nur Falco). Spotify-Links im Bearbeiten-Modus eintragen. ----
+// ---- Standard-Liederliste (nur Falco) ----
 const T = id => "https://open.spotify.com/track/" + id;
 const DEFAULT_SONGS = [
   ["Rock Me Amadeus",              T("67Dd0BI81gu6QT7otMd4Gm")],
@@ -108,11 +125,11 @@ const DEFAULT_SONGS = [
 const STORE_KEY = "falcoQuiz.v1";
 
 function load() {
-  const defs = DEFAULT_SONGS.map(([t, l]) => ({ title: t, link: l, start: 0, dur: 5, max: 240, revealed: false }));
+  const defs = DEFAULT_SONGS.map(([t, l]) => ({ title: t, link: l, start: 0, dur: 5, max: 240, revealed: false, fileName: "" }));
   try {
     const s = JSON.parse(localStorage.getItem(STORE_KEY));
     if (Array.isArray(s) && s.length === 10)
-      return s.map((x, i) => x.link ? x : { ...x, title: x.title || defs[i].title, link: defs[i].link });
+      return s.map((x, i) => ({ ...defs[i], ...x, title: x.title || defs[i].title, link: x.link || defs[i].link }));
   } catch (e) {}
   return defs;
 }
@@ -120,6 +137,99 @@ function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(songs)); 
 
 let songs = load();
 songs.forEach(s => s.revealed = false);
+
+// ---- Lokale Musikdateien (IndexedDB, nur auf diesem Gerät) ----
+const fileUrls = {};   // idx -> objectURL
+let db = null;
+function openDb() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open("falcoQuiz", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("files");
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+function idb(mode, fn) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction("files", mode), st = tx.objectStore("files");
+    const r = fn(st);
+    tx.oncomplete = () => res(r && r.result);
+    tx.onerror = () => rej(tx.error);
+  });
+}
+async function storeFile(i, file) {
+  if (db) await idb("readwrite", st => st.put(file, i));
+  if (fileUrls[i]) URL.revokeObjectURL(fileUrls[i]);
+  fileUrls[i] = URL.createObjectURL(file);
+  songs[i].fileName = file.name;
+  songs[i].max = 240;
+  save();
+  probeDuration(i);
+}
+async function removeFile(i) {
+  if (db) await idb("readwrite", st => st.delete(i));
+  if (fileUrls[i]) URL.revokeObjectURL(fileUrls[i]);
+  delete fileUrls[i];
+  songs[i].fileName = ""; songs[i].max = 240; save();
+}
+async function loadFiles() {
+  try {
+    db = await openDb();
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+    for (let i = 0; i < 10; i++) {
+      const blob = await idb("readonly", st => st.get(i));
+      if (blob) fileUrls[i] = URL.createObjectURL(blob);
+      else if (songs[i].fileName) { songs[i].fileName = ""; }
+    }
+  } catch (e) {
+    db = null;
+    songs.forEach(s => s.fileName = "");
+    setStatus("Hinweis: Dateien können hier nicht dauerhaft gespeichert werden – sie gelten nur bis zum Neuladen.");
+  }
+  render();
+}
+// Liedlänge einer Datei ermitteln, damit der Startregler bis zum Liedende reicht
+function probeDuration(i) {
+  const a = new Audio();
+  a.preload = "metadata";
+  a.onloadedmetadata = () => {
+    if (isFinite(a.duration) && a.duration > 0) {
+      songs[i].max = Math.max(0, Math.floor(a.duration) - 1);
+      songs[i].start = Math.min(songs[i].start, songs[i].max);
+      save(); render();
+    }
+  };
+  a.src = fileUrls[i];
+}
+
+// Dateinamen den Liedtiteln zuordnen
+const norm = t => t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
+  .replace(/ö/g, "o").replace(/oe/g, "o").replace(/ae/g, "a").replace(/ue/g, "u").replace(/[^a-z0-9]+/g, " ").trim();
+function matchSong(fileName, taken) {
+  const f = norm(fileName.replace(/\.[^.]+$/, ""));
+  let best = -1, bestLen = 0;
+  songs.forEach((s, i) => {
+    if (taken.has(i)) return;
+    // Haupttitel ohne Klammerzusatz, z. B. "Coming Home"
+    const full = norm(s.title), main = norm(s.title.replace(/\(.*?\)/g, ""));
+    for (const key of [full, main]) {
+      if (key && f.includes(key) && key.length > bestLen) { best = i; bestLen = key.length; }
+    }
+  });
+  return best;
+}
+document.getElementById("multiFile").onchange = async e => {
+  const files = [...e.target.files];
+  e.target.value = "";
+  if (!files.length) return;
+  const taken = new Set(), unmatched = [];
+  for (const f of files) {
+    const i = matchSong(f.name, taken);
+    if (i >= 0) { taken.add(i); await storeFile(i, f); } else unmatched.push(f.name);
+  }
+  render();
+  setStatus(`${taken.size} Datei(en) zugeordnet.` + (unmatched.length ? ` Nicht erkannt: ${unmatched.join(", ")} – bitte beim jeweiligen Lied einzeln auswählen.` : ""));
+};
 
 // Spotify-Link oder URI -> spotify:track:ID
 function toUri(link) {
@@ -131,6 +241,7 @@ function toUri(link) {
   return m ? "spotify:track:" + m[1] : null;
 }
 const fmt = s => Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
 // ---- UI ----
 const grid = document.getElementById("grid");
@@ -140,16 +251,17 @@ const setStatus = t => statusEl.textContent = t;
 function render() {
   grid.innerHTML = "";
   songs.forEach((s, i) => {
-    const uri = toUri(s.link);
+    const uri = toUri(s.link), hasFile = !!fileUrls[i];
     const card = document.createElement("div");
-    card.className = "card";
+    card.className = "card" + (active && active.idx === i ? " playing" : "");
     card.id = "card" + i;
     card.innerHTML = `
       <div class="head">
         <div class="num">${i + 1}</div>
         <div class="title ${s.revealed ? "" : "hidden"}">${s.revealed ? esc(s.title) : "? ? ? ? ?"}</div>
+        <span class="src ${hasFile ? "file" : uri ? "spot" : ""}">${hasFile ? "📁 Datei" : uri ? "Spotify" : "—"}</span>
       </div>
-      ${uri ? "" : `<div class="nolink">Noch kein Spotify-Link – unter „Lieder bearbeiten“ eintragen.</div>`}
+      ${hasFile || uri ? "" : `<div class="nolink">Keine Musik hinterlegt – unter „Lieder bearbeiten“ eine Datei oder einen Spotify-Link eintragen.</div>`}
       <div class="row">
         <label>Startposition <b class="vStart">${fmt(s.start)}</b></label>
         <input type="range" class="rStart" min="0" max="${s.max}" step="1" value="${s.start}">
@@ -160,13 +272,18 @@ function render() {
       </div>
       <div class="progress"><div></div></div>
       <div class="btns">
-        <button class="primary bPlay" ${uri ? "" : "disabled"}>▶ Abspielen</button>
+        <button class="primary bPlay" ${hasFile || uri ? "" : "disabled"}>▶ Abspielen</button>
         <button class="bReveal">${s.revealed ? "Verbergen" : "Auflösen"}</button>
       </div>
       ${s.revealed && uri ? `<a class="spotify" target="_blank" rel="noopener" href="https://open.spotify.com/track/${uri.split(":")[2]}">🎵 Ganzes Lied in Spotify öffnen</a>` : ""}
       <div class="edit">
         <label>Titel<input type="text" class="eTitle" value="${esc(s.title)}"></label>
-        <label>Spotify-Link<input type="text" class="eLink" placeholder="https://open.spotify.com/track/..." value="${esc(s.link)}"></label>
+        <div class="fileinfo">${hasFile ? "📁 " + esc(s.fileName || "Datei gespeichert") : ""}</div>
+        <div class="btns">
+          <label class="filebtn">📁 ${hasFile ? "Andere Datei" : "Datei wählen"}<input type="file" class="eFile" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac"></label>
+          ${hasFile ? `<button class="eRemove">Datei entfernen</button>` : ""}
+        </div>
+        <label>Spotify-Link (wird genutzt, wenn keine Datei da ist)<input type="text" class="eLink" placeholder="https://open.spotify.com/track/..." value="${esc(s.link)}"></label>
         <small><a target="_blank" rel="noopener" href="https://open.spotify.com/search/${encodeURIComponent("Falco " + s.title)}">Auf Spotify suchen</a>
         → beim Song „Teilen → Songlink kopieren“ und hier einfügen.</small>
       </div>`;
@@ -176,42 +293,119 @@ function render() {
     card.querySelector(".bPlay").onclick = () => playSnippet(i);
     card.querySelector(".bReveal").onclick = () => { s.revealed = !s.revealed; render(); };
     card.querySelector(".eTitle").onchange = e => { s.title = e.target.value; save(); render(); };
+    card.querySelector(".eFile").onchange = async e => {
+      const f = e.target.files[0];
+      if (f) { await storeFile(i, f); render(); setStatus(`Lied ${i + 1}: Datei gespeichert.`); }
+    };
+    const rm = card.querySelector(".eRemove");
+    if (rm) rm.onclick = async () => { stopPlayback(); await removeFile(i); render(); };
     card.querySelector(".eLink").onchange = e => {
       const v = e.target.value.trim();
       if (v && !toUri(v)) { alert("Das ist kein gültiger Spotify-Song-Link."); e.target.value = s.link; return; }
-      s.link = v; s.max = 240; s.start = Math.min(s.start, s.max); save(); render();
+      s.link = v; if (!fileUrls[i]) s.max = 240; s.start = Math.min(s.start, s.max); save(); render();
     };
     grid.appendChild(card);
   });
 }
-function esc(t) { return String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
 
 document.getElementById("btnEdit").onclick = () => document.body.classList.toggle("editing");
 document.getElementById("btnReveal").onclick = () => { songs.forEach(s => s.revealed = true); render(); };
 document.getElementById("btnHide").onclick = () => { songs.forEach(s => s.revealed = false); render(); };
 document.getElementById("btnPlayer").onclick = e => {
   const on = document.body.classList.toggle("showplayer");
-  e.target.textContent = on ? "🎧 Player verstecken" : "🎧 Player zeigen";
+  e.target.textContent = on ? "🎧 Spotify-Player verstecken" : "🎧 Spotify-Player zeigen";
 };
 document.getElementById("btnStop").onclick = () => stopPlayback("Gestoppt.");
 
-// ---- Spotify Embed-Player ----
-let controller = null, currentUri = null;
-let active = null; // { idx, timer, started, ticker }
+// ---- Gemeinsame Wiedergabe-Steuerung ----
+let active = null; // { idx, mode: "file"|"spotify", started, timer, ticker, fallback, ... }
+
+function progressBar(i) { return document.querySelector(`#card${i} .progress div`); }
+
+function stopPlayback(msg) {
+  if (active) {
+    if (active.cleanup) active.cleanup();
+    if (active.mode === "file") { audio.pause(); audio.muted = false; }
+    else if (controller) controller.pause();
+    clearTimeout(active.timer); clearTimeout(active.fallback);
+    clearInterval(active.ticker); cancelAnimationFrame(active.raf);
+    const card = document.getElementById("card" + active.idx);
+    if (card) { card.classList.remove("playing"); progressBar(active.idx).style.width = "0"; }
+  }
+  active = null;
+  if (msg) setStatus(msg);
+}
+
+function playSnippet(i) {
+  stopPlayback();
+  if (fileUrls[i]) playFile(i);
+  else if (toUri(songs[i].link)) playSpotify(i);
+}
+
+// ---- Wiedergabe aus eigener Datei (sekundengenau) ----
+const audio = document.getElementById("audio");
+
+function playFile(i) {
+  const s = songs[i];
+  active = { idx: i, mode: "file", started: false };
+  document.getElementById("card" + i).classList.add("playing");
+  setStatus(`Lied ${i + 1} wird geladen …`);
+
+  const a = active;
+  let start = s.start;
+  audio.muted = true;                       // stumm, bis die Startposition erreicht ist
+  if (audio.src !== fileUrls[i]) audio.src = fileUrls[i];
+
+  const seekAndGo = () => {
+    if (active !== a) return;
+    if (isFinite(audio.duration) && start > audio.duration - s.dur) start = Math.max(0, audio.duration - s.dur);
+    a.start = start;
+    audio.currentTime = start;
+  };
+  const onSeeked = () => {
+    if (active !== a || a.started) return;
+    if (Math.abs(audio.currentTime - a.start) > 0.3) return;
+    a.started = true;
+    audio.muted = false;
+    const end = a.start + s.dur, bar = progressBar(i);
+    const loop = () => {
+      if (active !== a) return;
+      const p = (audio.currentTime - a.start) / s.dur;
+      bar.style.width = Math.min(100, Math.max(0, p * 100)) + "%";
+      if (audio.currentTime >= end) { stopPlayback("Fertig – wer weiß es?"); return; }
+      a.raf = requestAnimationFrame(loop);
+    };
+    a.raf = requestAnimationFrame(loop);
+    // Absicherung, falls der Tab im Hintergrund ist und rAF pausiert
+    a.timer = setTimeout(() => { if (active === a) stopPlayback("Fertig – wer weiß es?"); }, s.dur * 1000 + 1500);
+    setStatus(`Lied ${i + 1} läuft …`);
+  };
+  audio.addEventListener("seeked", onSeeked, { once: false });
+  a.cleanup = () => audio.removeEventListener("seeked", onSeeked);
+
+  // play() direkt im Klick aufrufen (nötig für iPhone/Android)
+  const p = audio.play();
+  if (p && p.catch) p.catch(err => { if (active === a) stopPlayback("Abspielen nicht möglich: " + err.message); });
+  if (audio.readyState >= 1) seekAndGo();
+  else audio.addEventListener("loadedmetadata", seekAndGo, { once: true });
+
+  a.fallback = setTimeout(() => { if (active === a && !a.started) stopPlayback("Datei konnte nicht abgespielt werden."); }, 6000);
+}
+
+// ---- Wiedergabe über Spotify (wenn keine Datei hinterlegt ist) ----
+let controller = null, currentUri = null, spotifyReady = false;
 
 window.onSpotifyIframeApiReady = (IFrameAPI) => {
   IFrameAPI.createController(document.getElementById("embed"), { width: 300, height: 152 }, (c) => {
-    controller = c;
-    setStatus("Bereit. Wähle ein Lied und drücke ▶ Abspielen.");
+    controller = c; spotifyReady = true;
     c.addListener("playback_update", onUpdate);
   });
 };
 
 function onUpdate(e) {
   const d = e.data;
-  if (!active) return;
+  if (!active || active.mode !== "spotify") return;
   const s = songs[active.idx];
-  // Liedlänge für den Startregler übernehmen
   if (d.duration > 0) {
     const max = Math.max(0, Math.floor(d.duration / 1000) - 1);
     if (max !== s.max) {
@@ -220,58 +414,61 @@ function onUpdate(e) {
       if (r) r.max = max;
     }
   }
-  // Timer erst starten, wenn wirklich an der Startposition gespielt wird
-  if (!active.started && !d.isPaused && d.position >= s.start * 1000 - 1500) {
-    active.started = true;
-    const t0 = performance.now(), ms = s.dur * 1000;
-    const bar = document.querySelector(`#card${active.idx} .progress div`);
-    active.ticker = setInterval(() => { if (bar) bar.style.width = Math.min(100, (performance.now() - t0) / ms * 100) + "%"; }, 50);
-    active.timer = setTimeout(() => stopPlayback("Fertig – wer weiß es?"), ms);
-    setStatus(`Lied ${active.idx + 1} läuft …`);
+  let target = s.start * 1000;
+  if (d.duration > 0 && target > d.duration - s.dur * 1000) target = Math.max(0, d.duration - s.dur * 1000);
+  if (d.isPaused) return;
+
+  if (active.started) {
+    if (d.position >= active.endPos - 150) stopPlayback("Fertig – wer weiß es?");
+    return;
+  }
+  const now = performance.now();
+  if (Math.abs(d.position - target) <= 1500) {
+    startSpotifyTimer(target, d.position);
+  } else if (!active.seekSent) {
+    controller.seek(target / 1000);
+    active.seekSent = true;
+    active.forceAt = now + 2000;
+  } else if (now > active.forceAt) {
+    startSpotifyTimer(d.position, d.position);
   }
 }
 
-function stopPlayback(msg) {
-  if (controller) controller.pause();
-  if (active) {
-    clearTimeout(active.timer); clearTimeout(active.fallback); clearInterval(active.ticker);
-    const card = document.getElementById("card" + active.idx);
-    if (card) { card.classList.remove("playing"); card.querySelector(".progress div").style.width = "0"; }
-  }
-  active = null;
-  if (msg) setStatus(msg);
+function startSpotifyTimer(target, pos) {
+  const s = songs[active.idx];
+  active.started = true;
+  active.endPos = target + s.dur * 1000;
+  const ms = Math.max(300, active.endPos - pos);
+  const t0 = performance.now();
+  const bar = progressBar(active.idx);
+  active.ticker = setInterval(() => { if (bar) bar.style.width = Math.min(100, (performance.now() - t0) / ms * 100) + "%"; }, 50);
+  active.timer = setTimeout(() => stopPlayback("Fertig – wer weiß es?"), ms);
+  setStatus(`Lied ${active.idx + 1} läuft …`);
 }
 
-function playSnippet(i) {
-  if (!controller) { setStatus("Spotify-Player ist noch nicht bereit."); return; }
+function playSpotify(i) {
+  if (!spotifyReady) { setStatus("Spotify-Player ist noch nicht bereit (Internet nötig)."); return; }
   const s = songs[i], uri = toUri(s.link);
-  if (!uri) return;
-  stopPlayback();
-  active = { idx: i, started: false };
+  active = { idx: i, mode: "spotify", started: false };
   document.getElementById("card" + i).classList.add("playing");
-  setStatus(`Lied ${i + 1} wird geladen …`);
+  setStatus(`Lied ${i + 1} wird von Spotify geladen …`);
 
-  const go = () => {
-    controller.play();
-    setTimeout(() => { if (active && active.idx === i) controller.seek(s.start); }, 400);
-  };
   if (currentUri !== uri) {
     currentUri = uri;
-    controller.loadUri(uri);
-    setTimeout(go, 900);
+    controller.loadUri(uri, false, s.start);
+    setTimeout(() => { if (active && active.idx === i) controller.play(); }, 800);
   } else {
     controller.seek(s.start);
     controller.resume();
-    setTimeout(() => { if (active && active.idx === i) controller.seek(s.start); }, 300);
   }
-  // Falls der Browser Autoplay blockiert
   active.fallback = setTimeout(() => {
     if (active && active.idx === i && !active.started)
-      setStatus("Kein Ton? Klicke „🎧 Player zeigen“, starte einmal im Player selbst und versuche es erneut.");
-  }, 5000);
+      stopPlayback("Kein Ton? Tippe „🎧 Spotify-Player zeigen“, starte einmal im Player selbst und versuche es erneut.");
+  }, 8000);
 }
 
 render();
+loadFiles();
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
 <script src="https://open.spotify.com/embed/iframe-api/v1" async></script>
